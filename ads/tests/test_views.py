@@ -1,83 +1,174 @@
-# import pytest
-# from django.urls import reverse
-#
-# @pytest.mark.django_db
-# class TestAdAPI:
-#     def test_create_ad(self, auth_client):
-#         url = reverse('ad-list')
-#         data = {
-#             'title': 'New Ad',
-#             'description': 'New Description',
-#             'category': 'books',
-#             'condition': 'used'
-#         }
-#         response = auth_client.post(url, data)
-#         assert response.status_code == 201
-#         assert response.data['title'] == 'New Ad'
-#
-#     def test_retrieve_ad(self, auth_client, ad):
-#         url = reverse('ad-detail', args=[ad.id])
-#         response = auth_client.get(url)
-#         assert response.status_code == 200
-#         assert response.data['title'] == 'Test Ad'
-#
-#     def test_update_ad(self, auth_client, ad):
-#         url = reverse('ad-detail', args=[ad.id])
-#         data = {'title': 'Updated Title'}
-#         response = auth_client.patch(url, data)
-#         assert response.status_code == 200
-#         ad.refresh_from_db()
-#         assert ad.title == 'Updated Title'
-#
-#     def test_delete_ad(self, auth_client, ad):
-#         url = reverse('ad-detail', args=[ad.id])
-#         response = auth_client.delete(url)
-#         assert response.status_code == 204
-#         assert Ad.objects.count() == 0
-#
-#     def test_search_ads(self, auth_client, ad):
-#         url = reverse('ad-list') + '?q=Test'
-#         response = auth_client.get(url)
-#         assert response.status_code == 200
-#         assert len(response.data['results']) == 1
-#
-# @pytest.mark.django_db
-# class TestProposalAPI:
-#     def test_create_proposal(self, auth_client, ad):
-#         receiver_ad = Ad.objects.create(
-#             user=auth_client.user,
-#             title='Receiver Ad',
-#             description='Test'
-#         )
-#         url = reverse('proposal-list')
-#         data = {
-#             'ad_sender': ad.id,
-#             'ad_receiver': receiver_ad.id,
-#             'comment': 'Test Proposal'
-#         }
-#         response = auth_client.post(url, data)
-#         assert response.status_code == 201
-#         assert response.data['comment'] == 'Test Proposal'
-#
-#     def test_own_ad_proposal(self, auth_client, ad):
-#         url = reverse('proposal-list')
-#         data = {
-#             'ad_sender': ad.id,
-#             'ad_receiver': ad.id,
-#             'comment': 'Invalid'
-#         }
-#         response = auth_client.post(url, data)
-#         assert response.status_code == 400
-#
-#     def test_update_proposal_status(self, auth_client, proposal):
-#         url = reverse('proposal-detail', args=[proposal.id])
-#         data = {'status': 'accepted'}
-#         response = auth_client.patch(url, data)
-#         assert response.status_code == 200
-#         proposal.refresh_from_db()
-#         assert proposal.status == 'accepted'
-#
-#     def test_unauthorized_access(self, api_client):
-#         url = reverse('proposal-list')
-#         response = api_client.get(url)
-#         assert response.status_code == 403
+# tests/test_views.py
+import pytest
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+from ads.models import Ad, ExchangeProposal
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+@pytest.fixture
+def api_client():
+    return APIClient()
+
+
+@pytest.fixture
+def user():
+    return User.objects.create_user(
+        username='testuser',
+        password='testpass',
+        email='test@example.com'
+    )
+
+
+@pytest.fixture
+def auth_client(api_client, user):
+    api_client.force_authenticate(user=user)
+    return api_client
+
+
+@pytest.fixture
+def ad(user):
+    return Ad.objects.create(
+        user=user,
+        title='Test Ad',
+        description='Test Description',
+        category='electronics',
+        condition='new'
+    )
+
+
+@pytest.mark.django_db
+class TestAdViews:
+    def test_create_ad(self, auth_client):
+        url = reverse('ad-list')
+        data = {
+            'title': 'New Ad',
+            'description': 'New Description',
+            'category': 'books',
+            'condition': 'used'
+        }
+        response = auth_client.post(url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Ad.objects.count() == 1
+        assert Ad.objects.get().title == 'New Ad'
+
+    def test_retrieve_ad_list(self, auth_client, ad):
+        url = reverse('ad-list')
+        response = auth_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 4
+
+    def test_update_ad(self, auth_client, ad):
+        url = reverse('ad-detail', args=[ad.id])
+        data = {'title': 'Updated Title'}
+        response = auth_client.patch(url, data)
+        assert response.status_code == status.HTTP_200_OK
+        ad.refresh_from_db()
+        assert ad.title == 'Updated Title'
+
+    def test_delete_ad(self, auth_client, ad):
+        url = reverse('ad-detail', args=[ad.id])
+        response = auth_client.delete(url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert Ad.objects.count() == 0
+
+    def test_unauthenticated_access(self, api_client):
+        url = reverse('ad-list')
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+        response = api_client.post(url, {})
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+@pytest.mark.django_db
+class TestProposalViews:
+    def test_create_proposal(self, auth_client, user):
+        ad1 = Ad.objects.create(
+            user=user,
+            title='Ad 1',
+            description='Desc 1',
+            category='electronics'
+        )
+        ad2 = Ad.objects.create(
+            user=user,
+            title='Ad 2',
+            description='Desc 2',
+            category='books'
+        )
+
+        url = reverse('proposal-list')
+        data = {
+            'ad_sender': ad1.id,
+            'ad_receiver': ad2.id,
+            'comment': 'Test proposal'
+        }
+        response = auth_client.post(url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+        assert ExchangeProposal.objects.count() == 1
+
+    def test_update_proposal_status(self, auth_client, user):
+        # Создаем получателя
+        receiver = User.objects.create_user(username='receiver', password='pass')
+
+        # Объявление отправителя
+        ad_sender = Ad.objects.create(
+            user=user,
+            title='Ad 1',
+            description='Test',
+            category='electronics',
+            condition='new'
+        )
+
+        # Объявление получателя
+        ad_receiver = Ad.objects.create(
+            user=receiver,
+            title='Ad 2',
+            description='Test',
+            category='books',
+            condition='used'
+        )
+
+        # Создаем предложение
+        proposal = ExchangeProposal.objects.create(
+            ad_sender=ad_sender,
+            ad_receiver=ad_receiver,
+            comment='Test proposal'
+        )
+
+        # Авторизуемся как ПОЛУЧАТЕЛЬ
+        client = APIClient()
+        client.force_authenticate(user=receiver)
+
+        url = reverse('proposal-detail', args=[proposal.id])
+        data = {'status': 'accepted'}
+        response = client.patch(url, data)
+
+        assert response.status_code == status.HTTP_200_OK
+        proposal.refresh_from_db()
+        assert proposal.status == 'accepted'
+
+    def test_proposal_permissions(self, auth_client, user):
+        other_user = User.objects.create_user(username='other', password='pass')
+        ad1 = Ad.objects.create(user=user, title='Ad 1')
+        ad2 = Ad.objects.create(user=other_user, title='Ad 2')
+
+        # Создание предложения
+        url = reverse('proposal-list')
+        data = {
+            'ad_sender': ad1.id,
+            'ad_receiver': ad2.id,
+            'comment': 'Test'
+        }
+        response = auth_client.post(url, data)
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # Попытка обновления другим пользователем
+        client = APIClient()
+        client.force_authenticate(user=other_user)
+        url = reverse('proposal-detail', args=[response.data['id']])
+        response = client.patch(url, {'status': 'rejected'})
+        assert response.status_code == status.HTTP_200_OK

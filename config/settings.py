@@ -39,11 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'ads.apps.AdsConfig',
+    'api.apps.ApiConfig',
     'drf_yasg',
 
     'rest_framework',
     'rest_framework.authtoken',
-    'api.apps.ApiConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -182,4 +183,4 @@ SIMPLE_JWT = {
 #     'USE_SESSION_AUTH': False
 # }
 
-# DJANGO_SETTINGS_MODULE = "apps.config.settings"
+DJANGO_SETTINGS_MODULE = "apps.config.settings"

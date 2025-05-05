@@ -20,19 +20,33 @@ class AdSerializer(serializers.ModelSerializer):
 class ProposalSerializer(serializers.ModelSerializer):
     ad_sender = serializers.PrimaryKeyRelatedField(
         queryset=Ad.objects.all(),
-        write_only=True
+        required=False
     )
     ad_receiver = serializers.PrimaryKeyRelatedField(
         queryset=Ad.objects.all(),
-        write_only=True
+        required=False
     )
 
     class Meta:
         model = ExchangeProposal
-        fields = ['ad_sender', 'ad_receiver', 'comment', 'status']
-        read_only_fields = ['status']
+        fields = '__all__'
+        read_only_fields = ['created_at']
 
     def validate(self, data):
-        if data['ad_sender'].user != self.context['request'].user:
-            raise serializers.ValidationError("Вы не владелец объявления-отправителя")
+        instance = self.instance
+
+        # При обновлении
+        if instance:
+            # Проверяем права
+            if self.context['request'].user != instance.ad_receiver.user:
+                raise serializers.ValidationError(
+                    "Только получатель может менять статус"
+                )
+
+            # Проверяем допустимость статуса
+            if 'status' in data and instance.status != 'pending':
+                raise serializers.ValidationError(
+                    "Можно менять статус только для ожидающих предложений"
+                )
+
         return data
