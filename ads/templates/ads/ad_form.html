@@ -1,0 +1,54 @@
+<!-- ad_form.html -->
+{% extends 'ads/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                {% if object %}Редактирование объявления{% else %}Новое объявление{% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.title.label_tag }}
+                        {{ form.title }}
+                        <div class="invalid-feedback">{{ form.title.errors }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label_tag }}
+                        {{ form.description }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.category.label_tag }}
+                            {{ form.category }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.condition.label_tag }}
+                            {{ form.condition }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.image_url.label_tag }}
+                        {{ form.image_url }}
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            {% if object %}Сохранить{% else %}Создать{% endif %}
+                        </button>
+                        <a href="{% if object %}{% url 'ads:ad-detail' object.id %}{% else %}{% url 'ads:ad-list' %}{% endif %}"
+                           class="btn btn-outline-secondary">
+                            Отмена
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

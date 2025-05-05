@@ -1,0 +1,131 @@
+<!-- ad_detail.html -->
+{% extends 'ads/base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            {% if ad.image_url %}
+            <img src="{{ ad.image_url }}" class="card-img-top" alt="{{ ad.title }}">
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title">{{ ad.title }}</h1>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="badge bg-primary">{{ ad.get_category_display }}</span>
+                        <span class="badge bg-secondary">{{ ad.get_condition_display }}</span>
+                    </div>
+                    <small class="text-muted">{{ ad.created_at|date:"d M Y H:i" }}</small>
+                </div>
+                <p class="card-text">{{ ad.description }}</p>
+            </div>
+            <div class="card-footer">
+                {% if ad.user == request.user %}
+                    <div class="btn-group">
+                        <a href="{% url 'ads:ad-update' ad.id %}" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                data-bs-target="#deleteModal">
+                            Удалить
+                        </button>
+                    </div>
+                {% else %}
+                    <button class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#proposalModal">
+                        Предложить обмен
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Предложения обмена</div>
+            <div class="card-body">
+                {% for proposal in ad.received_proposals.all %}
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h6>От: {{ proposal.ad_sender.title }}</h6>
+                            <p class="small">{{ proposal.comment }}</p>
+                            <div class="d-flex justify-content-between">
+                                <span class="badge bg-{% if proposal.status == 'pending' %}warning{% elif proposal.status == 'accepted' %}success{% else %}danger{% endif %}">
+                                    {{ proposal.get_status_display }}
+                                </span>
+                                {% if ad.user == request.user %}
+                                    <form method="post" action="{% url 'ads:proposal-update' proposal.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="accepted">
+                                        <button type="submit" class="btn btn-sm btn-success">✓</button>
+                                    </form>
+                                    <form method="post" action="{% url 'ads:proposal-update' proposal.id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="status" value="rejected">
+                                        <button type="submit" class="btn btn-sm btn-danger">✕</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">Нет предложений обмена</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Удаление объявления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Вы уверены, что хотите удалить это объявление?
+            </div>
+            <div class="modal-footer">
+                <form method="post" action="{% url 'ads:ad-delete' ad.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Proposal Modal -->
+<div class="modal fade" id="proposalModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'ads:proposal-create' ad.id %}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Предложить обмен</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="ad_receiver" value="{{ ad.id }}">
+                    <div class="mb-3">
+                        <label class="form-label">Ваше объявление для обмена</label>
+                        <select name="ad_sender" class="form-select">
+                            {% for user_ad in user_ads %}
+                                <option value="{{ user_ad.id }}">{{ user_ad.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea name="comment" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Отправить</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

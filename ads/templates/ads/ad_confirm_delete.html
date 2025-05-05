@@ -1,0 +1,22 @@
+{% extends 'ads/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Удаление объявления</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Вы уверены, что хотите удалить объявление "{{ object.title }}"?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-danger">Да, удалить</button>
+                        <a href="{% url 'ads:ad-detail' object.id %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

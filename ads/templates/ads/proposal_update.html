@@ -1,0 +1,45 @@
+{% extends 'ads/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Изменение статуса предложения</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Текущий статус</label>
+                        <div class="form-control">
+                            {{ object.get_status_display }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Новый статус</label>
+                        <select name="status" class="form-select">
+                            {% for value, label in status_choices %}
+                                <option value="{{ value }}"
+                                    {% if value == object.status %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>Сохранить изменения
+                        </button>
+                        <a href="{% url 'ads:ad-detail' object.ad_receiver.id %}"
+                           class="btn btn-outline-secondary">
+                            Назад к объявлению
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

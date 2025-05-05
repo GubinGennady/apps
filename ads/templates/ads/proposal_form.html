@@ -1,0 +1,116 @@
+{% extends 'ads/base.html' %}
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">
+                            <i class="bi bi-arrow-left-right me-2"></i>
+                            Предложение обмена
+                        </h3>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Вы предлагаете обмен для объявления:
+                            <strong>{{ ad_receiver.title }}</strong>
+                        </div>
+
+                        <!-- proposal_form.html -->
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            <input type="hidden" name="ad_receiver" value="{{ ad_receiver.id }}">
+
+                            <!-- Выбор своего объявления -->
+                            <div class="mb-4">
+                                <label class="form-label fs-5">
+                                    <i class="bi bi-box-seam me-2"></i>
+                                    Ваше объявление для обмена
+                                </label>
+                                <div class="list-group">
+                                    {% for ad in user_ads %}
+                                        <label class="list-group-item d-flex gap-3">
+                                            <input class="form-check-input flex-shrink-0"
+                                                   type="radio"
+                                                   name="ad_sender"
+                                                   value="{{ ad.id }}"
+                                                   required>
+                                            <div class="w-100">
+                                                <h6 class="mb-1">{{ ad.title }}</h6>
+                                                <small class="text-muted">
+                                                    {{ ad.get_category_display }} •
+                                                    {{ ad.get_condition_display }}
+                                                </small>
+                                                {% if ad.image_url %}
+                                                    <img src="{{ ad.image_url }}"
+                                                         class="img-thumbnail mt-2"
+                                                         style="max-height: 100px">
+                                                {% endif %}
+                                            </div>
+                                        </label>
+                                    {% empty %}
+                                        <div class="alert alert-warning">
+                                            У вас нет активных объявлений для обмена
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Остальная часть формы -->
+                        </form>
+                        <!-- Комментарий -->
+                        <div class="mb-4">
+                            <label class="form-label fs-5">
+                                <i class="bi bi-chat-text me-2"></i>
+                                Комментарий к предложению
+                            </label>
+                            <textarea name="comment"
+                                      class="form-control"
+                                      rows="4"
+                                      placeholder="Опишите ваше предложение..."
+                                      maxlength="500"></textarea>
+                            <div class="form-text">
+                                Максимум 500 символов
+                            </div>
+                        </div>
+
+                        <!-- Кнопки -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{% url 'ads:ad-detail' ad_receiver.id %}"
+                               class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Отмена
+                            </a>
+                            <button type="submit"
+                                    class="btn btn-primary btn-lg"
+                                    {% if not user_ads %}disabled{% endif %}>
+                                <i class="bi bi-send-check me-2"></i>
+                                Отправить предложение
+                            </button>
+                        </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Валидация формы
+        (function () {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+{% endblock %}

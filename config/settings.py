@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'ads.apps.AdsConfig',
+    'drf_yasg',
+
+    'rest_framework',
+    'rest_framework.authtoken',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -74,8 +81,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'platform',
+        'HOST': 'localhost',
+        'USER': 'postgres',
+        'PASSWORD': 12345,
+        'PORT': 5432,
     }
 }
 
@@ -116,11 +127,59 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATICFILES_DIRS = {
+STATICFILES_DIRS = (
     BASE_DIR / 'static',
-}
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'ads.CustomUser'
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Время жизни Access Token
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),  # Время жизни Refresh Token
+    'ROTATE_REFRESH_TOKENS': True,  # Генерировать новый Refresh Token при обновлении
+    'BLACKLIST_AFTER_ROTATION': True,  # Добавлять старые токены в черный список
+    'UPDATE_LAST_LOGIN': True,  # Обновлять дату последнего входа
+
+    'ALGORITHM': 'HS256',  # Алгоритм подписи
+    'SIGNING_KEY': SECRET_KEY,  # Ключ подписи (по умолчанию SECRET_KEY проекта)
+    'VERIFYING_KEY': None,  # Ключ проверки (для асимметричных алгоритмов)
+
+    'AUTH_HEADER_TYPES': ('Bearer',),  # Тип заголовка для авторизации
+    'USER_ID_FIELD': 'id',  # Поле для идентификации пользователя
+    'USER_ID_CLAIM': 'user_id',  # Ключ в payload для идентификатора пользователя
+}
+
+
+# SWAGGER_SETTINGS = {
+#     'SECURITY_DEFINITIONS': {
+#         'Bearer': {
+#             'type': 'apiKey',
+#             'name': 'Authorization',
+#             'in': 'header'
+#         }
+#     },
+#     'USE_SESSION_AUTH': False
+# }
+
+# DJANGO_SETTINGS_MODULE = "apps.config.settings"
