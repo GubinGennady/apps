@@ -3,15 +3,20 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from config import settings
 
+# Общие настройки для необязательных полей
 NULLABLE = {'blank': True, 'null': True}
 
 
 class CustomUser(AbstractUser):
-    """Кастомная модель пользователя с дополнительными полями"""
+    """
+    Расширенная модель пользователя с дополнительными полями.
+    Наследуется от AbstractUser для базовой функциональности аутентификации.
+    """
     phone_number = models.CharField(max_length=20, **NULLABLE)
     address = models.TextField(**NULLABLE)
 
     def __str__(self):
+        """Строковое представление пользователя (для админки и отладки)"""
         return self.username
 
     class Meta:
@@ -20,13 +25,18 @@ class CustomUser(AbstractUser):
 
 
 class Ad(models.Model):
-    """Модель объявления"""
+    """
+    Модель объявления для системы обмена товарами.
+    Содержит информацию о товаре и его состоянии.
+    """
+    # Варианты состояния товара
     CONDITION_CHOICES = [
         ('new', 'Новое'),
         ('used', 'Б/у'),
         ('broken', 'Требует ремонта'),
     ]
 
+    # Категории товаров
     CATEGORY_CHOICES = [
         ('books', 'Книги'),
         ('electronics', 'Электроника'),
@@ -43,16 +53,21 @@ class Ad(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        """Отображение в формате: Заголовок (Категория)"""
         return f"{self.title} ({self.get_category_display()})"
 
     class Meta:
         verbose_name = 'Объявление'
         verbose_name_plural = 'Объявления'
-        ordering = ['-created_at']
+        ordering = ['-created_at']  # Сортировка по убыванию даты создания
 
 
 class ExchangeProposal(models.Model):
-    """Модель предложения обмена"""
+    """
+    Модель предложения обмена между двумя объявлениями.
+    Отслеживает статус предложения и комментарии.
+    """
+    # Статусы предложения
     STATUS_CHOICES = [
         ('pending', 'На рассмотрении'),
         ('accepted', 'Принято'),
@@ -66,10 +81,11 @@ class ExchangeProposal(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        """Отображение в формате: Предложение #ID (Статус)"""
         return f"Предложение #{self.id} ({self.get_status_display()})"
 
     class Meta:
         verbose_name = 'Предложение обмена'
         verbose_name_plural = 'Предложения обмена'
-        unique_together = ['ad_sender', 'ad_receiver']
-        ordering = ['-created_at']
+        unique_together = ['ad_sender', 'ad_receiver']  # Запрет дублирования предложений
+        ordering = ['-created_at']  # Сортировка по дате создания

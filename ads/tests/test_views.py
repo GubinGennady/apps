@@ -1,4 +1,3 @@
-# tests/test_views.py
 import pytest
 from django.urls import reverse
 from rest_framework import status
@@ -9,6 +8,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+# Фикстура для API клиента
 @pytest.fixture
 def api_client():
     return APIClient()
@@ -23,6 +23,7 @@ def user():
     )
 
 
+# Фикстура для аутентифицированного пользователя
 @pytest.fixture
 def auth_client(api_client, user):
     api_client.force_authenticate(user=user)
@@ -40,6 +41,7 @@ def ad(user):
     )
 
 
+# Тесты для работы с объявлениями (CRUD)
 @pytest.mark.django_db
 class TestAdViews:
     def test_create_ad(self, auth_client):
@@ -59,7 +61,7 @@ class TestAdViews:
         url = reverse('ad-list')
         response = auth_client.get(url)
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 4
+        assert len(response.data) == 4  # Предполагается пагинация или определенная структура ответа
 
     def test_update_ad(self, auth_client, ad):
         url = reverse('ad-detail', args=[ad.id])
@@ -84,9 +86,11 @@ class TestAdViews:
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+# Тесты для работы с предложениями обмена
 @pytest.mark.django_db
 class TestProposalViews:
     def test_create_proposal(self, auth_client, user):
+        # Создание двух объявлений для обмена
         ad1 = Ad.objects.create(
             user=user,
             title='Ad 1',
@@ -100,6 +104,7 @@ class TestProposalViews:
             category='books'
         )
 
+        # Проверка создания предложения
         url = reverse('proposal-list')
         data = {
             'ad_sender': ad1.id,
