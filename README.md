@@ -91,7 +91,7 @@ apps (PlatformForExchangingThings)
 
 **Пример запроса:**
 
-    curl -X GET http://localhost:8000/api/ads/
+    curl -X GET http://localhost:8000/api/v1/ads/
 
 ## Модели данных
 
@@ -184,5 +184,5 @@ apps (PlatformForExchangingThings)
     2. Убедитесь в корректности миграций
     3. Для экстренных случаев:
         Email: gubingm@list.ru
-        Telegram: @CompasSpace
+        Telegram: @juniormasterpython
 
